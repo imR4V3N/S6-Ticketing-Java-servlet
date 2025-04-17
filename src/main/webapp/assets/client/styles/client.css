@@ -1,0 +1,205 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+:root {
+    --primary: #4285f4;
+    --primary-dark: #3367d6;
+    --secondary: #f8f9fa;
+    --text-dark: #333;
+    --text-light: #666;
+}
+
+body {
+    background: #f5f8ff;
+    min-height: 100vh;
+}
+
+.navbar {
+    background: white;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.user-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.welcome-text {
+    color: var(--text-light);
+}
+
+.logout-btn {
+    padding: 0.5rem 1rem;
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    text-decoration: none;
+    transition: background 0.3s;
+}
+
+.logout-btn:hover {
+    background: var(--primary-dark);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 6rem auto 2rem;
+    padding: 0 1rem;
+}
+
+.hero {
+    background: linear-gradient(45deg, #4285f4, #34a853);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.search-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin: -4rem auto 2rem;
+    max-width: 800px;
+    position: relative;
+}
+
+.search-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+}
+
+.form-group {
+    margin-bottom: 0.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+select, input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+select:focus, input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+}
+
+.search-btn {
+    padding: 0.75rem 2rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+    height: 2.8rem;
+}
+
+.search-btn:hover {
+    background: var(--primary-dark);
+}
+
+.flights-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.flights-section h2 {
+    color: var(--text-dark);
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+.flights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.flight-card {
+    background: var(--secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: transform 0.3s;
+}
+
+.flight-card:hover {
+    transform: translateY(-5px);
+}
+
+.flight-info {
+    margin-bottom: 1rem;
+}
+
+.flight-info div {
+    margin-bottom: 0.5rem;
+    color: var(--text-dark);
+}
+
+.flight-info span {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.booking-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.booking-btn:hover {
+    background: var(--primary-dark);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-light);
+}
