@@ -1,7 +1,6 @@
 // Booking.java
 package mg.ticketing.models.flight;
 
-import com.google.gson.annotations.Expose;
 import jakarta.servlet.http.Part;
 import mg.framework.dao.annotation.Column;
 import mg.framework.dao.annotation.Table;
@@ -179,78 +178,173 @@ public class Booking extends Dao {
         return Arrays.stream(bookings).filter(booking -> booking.getIdFlight() == this.getIdFlight()).toArray(Booking[]::new);
     }
 
-    public void book(Connection connection, String idplace, String number, String date, Flight flight1, User user, int idage, Part picture) throws Exception {
-        String file_name = user.getUsername()+user.getId()+ Utils.getFileExtension(picture);
+//    public void book(Connection connection, String date, Flight flight1, User user, Part picture) throws Exception {
+//        String file_name = user.getUsername()+user.getId()+ Utils.getFileExtension(picture);
+//
+//        Rules rules = new Rules().getRules();
+//        Flight flight = flight1.getById(connection);
+//        Timestamp bookingDate = Timestamp.valueOf(Utils.format(date));
+//        if (picture == null || picture.getSize() <= 0) {
+//            throw new Exception("You can't book a flight! You need a passport to book a flight");
+//        } else {
+//            if (flight.getStartDate().getTime() - bookingDate.getTime() < rules.getHoursBooking()) {
+//                throw new Exception("You can't book this flight! You must book at least " + rules.getHoursBooking() + " hours before the flight");
+//            } else {
+//                int available = flight.getNumberPlacesAvailable(connection, this.getIdPlace());
+//                if (available < this.getPlaceNumber()) {
+//                    throw new Exception("You can't book this flight! Not enough places available : " + available);
+//                } else {
+//                    FlightPromotion promotion = new FlightPromotion();
+//                    promotion.setIdFlight(flight.getId());
+//                    promotion.setIdPlace(this.getIdPlace());
+//                    promotion = promotion.getByIdFlightAndIdPlace(connection);
+//                    double price = flight.getPriceByIdPlace(connection, this.getIdPlace()).getPrice();
+//
+//                    if (promotion != null) {
+//                        Age age = new Age(this.getIdAge(), null, 0,0);
+//                        age = age.getById(connection);
+//
+//                        int placesToReserve = this.getPlaceNumber();
+//
+//                        int promoUsed = Math.min(placesToReserve, promotion.getPlaceNumber());
+//                        int nonPromoUsed = placesToReserve - promoUsed;
+//
+//                        double promPercent = promotion.getPromotion() * age.getPromotion();
+//
+//                        double promoPrice = price * (promPercent / 100);
+//
+//                        double totalPromoPrice = promoUsed * promoPrice;
+//                        double totalNonPromoPrice = nonPromoUsed * price;
+//
+//                        double totalPrice = totalPromoPrice + totalNonPromoPrice;
+//
+//                        Booking booking = new Booking(user.getId(), flight.getId());
+//                        booking.setIdPlace(this.getIdPlace());
+//                        booking.setPlaceNumber(this.getPlaceNumber());
+//                        booking.setPrice(totalPrice);
+//                        booking.setPicture(file_name);
+//                        booking.setIdAge(this.getIdAge());
+//                        booking.save(connection);
+//
+//                        promotion.setPlaceNumber(promotion.getPlaceNumber() - promoUsed);
+//                        promotion.update(connection);
+//
+//                        if (promotion.getPlaceNumber() == 0) {
+//                            promotion.delete(connection);
+//                        }
+//
+//                    } else {
+//                        Booking booking = new Booking(user.getId(), flight.getId());
+//                        booking.setIdPlace(this.getIdPlace());
+//                        booking.setPlaceNumber(this.getPlaceNumber());
+//                        booking.setPrice(price * this.getPlaceNumber());
+//                        booking.setPicture(file_name);
+//                        booking.setIdAge(this.getIdAge());
+//                        booking.save(connection);
+//                    }
+//
+//                    user.upload(picture, file_name);
+//                }
+//            }
+//        }
+//
+//    }
 
+//    RESERVATION
+    public void book(Connection connection, String date, Flight flightInput, User user, Part picture) throws Exception {
+        validatePicture(picture);
+
+        String fileName = buildFileName(user, picture);
         Rules rules = new Rules().getRules();
-        Flight flight = flight1.getById(connection);
+        Flight flight = flightInput.getById(connection);
         Timestamp bookingDate = Timestamp.valueOf(Utils.format(date));
-        if (picture == null || picture.getSize() <= 0) {
-            throw new Exception("You can't book a flight! You need a passport to book a flight");
-        } else {
-            if (flight.getStartDate().getTime() - bookingDate.getTime() < rules.getHoursBooking()) {
-                throw new Exception("You can't book this flight! You must book at least " + rules.getHoursBooking() + " hours before the flight");
-            } else {
-                int available = flight.getNumberPlacesAvailable(connection, Integer.valueOf(idplace));
-                if (available < Integer.valueOf(number)) {
-                    throw new Exception("You can't book this flight! Not enough places available : " + available);
-                } else {
-                    FlightPromotion promotion = new FlightPromotion();
-                    promotion.setIdFlight(flight.getId());
-                    promotion.setIdPlace(Integer.valueOf(idplace));
-                    promotion = promotion.getByIdFlightAndIdPlace(connection);
-                    double price = flight.getPriceByIdPlace(connection, Integer.valueOf(idplace)).getPrice();
 
-                    if (promotion != null) {
-                        Age age = new Age(idage, null, 0,0);
-                        age = age.getById(connection);
+        validateBookingDate(flight, bookingDate, rules);
+        validateSeatAvailability(connection, flight);
 
-                        int placesToReserve = Integer.valueOf(number);
+        double basePrice = flight.getPriceByIdPlace(connection, this.getIdPlace()).getPrice();
+        Booking booking = createBaseBooking(user, flight, fileName);
 
-                        int promoUsed = Math.min(placesToReserve, promotion.getPlaceNumber());
-                        int nonPromoUsed = placesToReserve - promoUsed;
+        FlightPromotion promotion = fetchPromotion(connection, flight);
 
-                        double promPercent = promotion.getPromotion() * age.getPromotion();
+        double totalPrice = (promotion != null)
+                ? applyPromotionAndGetTotal(connection, promotion, basePrice, booking)
+                : applyNoPromotionAndGetTotal(basePrice, booking);
 
-                        double promoPrice = price * (promPercent / 100);
+        booking.setPrice(totalPrice);
+        booking.save(connection);
 
-                        double totalPromoPrice = promoUsed * promoPrice;
-                        double totalNonPromoPrice = nonPromoUsed * price;
-
-                        double totalPrice = totalPromoPrice + totalNonPromoPrice;
-
-                        Booking booking = new Booking(user.getId(), flight.getId());
-                        booking.setIdPlace(Integer.valueOf(idplace));
-                        booking.setPlaceNumber(Integer.valueOf(number));
-                        booking.setPrice(totalPrice);
-                        booking.setPicture(file_name);
-                        booking.setIdAge(idage);
-                        booking.save(connection);
-
-                        promotion.setPlaceNumber(promotion.getPlaceNumber() - promoUsed);
-                        promotion.update(connection);
-
-                        if (promotion.getPlaceNumber() == 0) {
-                            promotion.delete(connection);
-                        }
-
-                    } else {
-                        Booking booking = new Booking(user.getId(), flight.getId());
-                        booking.setIdPlace(Integer.valueOf(idplace));
-                        booking.setPlaceNumber(Integer.valueOf(number));
-                        booking.setPrice(price * Integer.valueOf(number));
-                        booking.setPicture(file_name);
-                        booking.setIdAge(idage);
-                        booking.save(connection);
-                    }
-
-                    user.upload(picture, file_name);
-                }
-            }
-        }
-
+        user.upload(picture, fileName);
     }
 
+    private void validatePicture(Part picture) throws Exception {
+        if (picture == null || picture.getSize() <= 0) {
+            throw new Exception("You can't book a flight! You need a passport to book a flight");
+        }
+    }
+
+    private String buildFileName(User user, Part picture) {
+        return user.getUsername() + user.getId() + Utils.getFileExtension(picture);
+    }
+
+    private void validateBookingDate(Flight flight, Timestamp bookingDate, Rules rules) throws Exception {
+        long timeBeforeFlight = flight.getStartDate().getTime() - bookingDate.getTime();
+        if (timeBeforeFlight < rules.getHoursBooking()) {
+            throw new Exception("You can't book this flight! You must book at least " + rules.getHoursBooking() + " hours before the flight");
+        }
+    }
+
+    private void validateSeatAvailability(Connection connection, Flight flight) throws Exception {
+        int availableSeats = flight.getNumberPlacesAvailable(connection, this.getIdPlace());
+        if (availableSeats < this.getPlaceNumber()) {
+            throw new Exception("You can't book this flight! Not enough places available: " + availableSeats);
+        }
+    }
+
+    private Booking createBaseBooking(User user, Flight flight, String fileName) {
+        Booking booking = new Booking(user.getId(), flight.getId());
+        booking.setIdPlace(this.getIdPlace());
+        booking.setPlaceNumber(this.getPlaceNumber());
+        booking.setPicture(fileName);
+        booking.setIdAge(this.getIdAge());
+        return booking;
+    }
+
+    private FlightPromotion fetchPromotion(Connection connection, Flight flight) throws Exception {
+        FlightPromotion promotion = new FlightPromotion();
+        promotion.setIdFlight(flight.getId());
+        promotion.setIdPlace(this.getIdPlace());
+        return promotion.getByIdFlightAndIdPlace(connection);
+    }
+
+    private double applyPromotionAndGetTotal(Connection connection, FlightPromotion promotion, double price, Booking booking) throws Exception {
+        Age age = new Age(this.getIdAge(), null, 0, 0).getById(connection);
+        int totalSeats = this.getPlaceNumber();
+
+        int promoUsed = Math.min(totalSeats, promotion.getPlaceNumber());
+        int nonPromoUsed = totalSeats - promoUsed;
+
+        double promoRate = promotion.getPromotion() * age.getPromotion();
+        double promoPrice = price * (promoRate / 100);
+        double totalPrice = (promoUsed * promoPrice) + (nonPromoUsed * price);
+
+        promotion.setPlaceNumber(promotion.getPlaceNumber() - promoUsed);
+        promotion.update(connection);
+
+        if (promotion.getPlaceNumber() == 0) {
+            promotion.delete(connection);
+        }
+
+        return totalPrice;
+    }
+
+    private double applyNoPromotionAndGetTotal(double price, Booking booking) {
+        return price * booking.getPlaceNumber();
+    }
+
+
+
+//    ANNULATION
     public void cancelBooking(Connection connection, String id, String date, Flight flight1) {
         Rules rules = new Rules().getRules();
         Flight flight = flight1.getById(connection);

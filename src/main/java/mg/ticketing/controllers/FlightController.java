@@ -81,10 +81,6 @@ public class FlightController {
                 page = "pages/client/main.jsp";
             }
 
-            System.out.println("START " + start);
-            System.out.println("DEST " + dest);
-            System.out.println("PLANE " + plane);
-
             Plane[] planes = new Plane().init(connection);
             model.addData("planes", planes);
 
@@ -213,50 +209,54 @@ public class FlightController {
     @Post
     public ModelView promotion(@RequestParam("flight") String id, @RequestParam("message") String message) {
         ModelView model = new ModelView("pages/client/booking.jsp");
-        FlightPromotion promotion = new FlightPromotion();
-        promotion.setIdFlight(Integer.valueOf(id));
+        try (Connection connection = new UtilDb().getPgConnection()) {
+            int flightId = Integer.parseInt(id);
+            User user = (User) session.get("user");
 
-        User user = (User) session.get("user");
-        Booking booking = new Booking();
-        booking.setIdUser(user.getId());
-        booking.setIdFlight(Integer.valueOf(id));
+            // Récupération des données nécessaires
+            Flight flight = new Flight();
+            flight.setId(flightId);
+            Flight flightDetails = flight.getById(connection);
 
-        Flight flight = new Flight();
-        flight.setId(Integer.valueOf(id));
-
-        try {
-            Connection connection = new UtilDb().getPgConnection();
-            Flight flight1 = flight.getById(connection);
-
-            PlaceType[] placeTypes = flight1.getPrice(connection);
-            if (placeTypes != null) {
-                for (PlaceType placeType : placeTypes) {
-                    placeType.setAvailable(flight1.getNumberPlacesAvailable(connection, placeType.getId()));
-                }
-            }
-
-            FlightPromotion[] promotions = promotion.getByIdFlight(connection);
-            Booking[] bookings = booking.getByIdUserAndIdFlight(connection);
-            String message1 = message!=null ?message:"";
+            PlaceType[] placeTypes = getPlaceTypesWithAvailability(connection, flightDetails);
+            FlightPromotion[] promotions = new FlightPromotion().getByIdFlight(connection);
+            Booking[] bookings = getBookingsByUserAndFlight(connection, user, flightId);
             Age[] ages = new Age().getAll(connection);
 
+            // Ajout des données au modèle
             model.addData("ages", ages);
             model.addData("placeTypes", placeTypes);
             model.addData("promotions", promotions);
             model.addData("bookings", bookings);
-            model.addData("flight", flight1);
-            model.addData("message", message1);
+            model.addData("flight", flightDetails);
+            model.addData("message", message != null ? message : "");
 
-            connection.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
         return model;
     }
 
+    private PlaceType[] getPlaceTypesWithAvailability(Connection connection, Flight flight) throws Exception {
+        PlaceType[] placeTypes = flight.getPrice(connection);
+        if (placeTypes != null) {
+            for (PlaceType placeType : placeTypes) {
+                placeType.setAvailable(flight.getNumberPlacesAvailable(connection, placeType.getId()));
+            }
+        }
+        return placeTypes;
+    }
+
+    private Booking[] getBookingsByUserAndFlight(Connection connection, User user, int flightId) throws Exception {
+        Booking booking = new Booking();
+        booking.setIdUser(user.getId());
+        booking.setIdFlight(flightId);
+        return booking.getByIdUserAndIdFlight(connection);
+    }
+
     @Url("flights/booking")
     @Post
-    public ModelView booking(@RequestParam("flight") String idflight, @RequestParam("place") String idplace, @RequestParam("number") String number, @RequestParam("date") String date, @RequestParam("age") int age, @RequestParam("picture") Part picture) {
+    public ModelView booking(@RequestParam("Booking") Booking booking, @RequestParam("flight") String idflight , @RequestParam("date") String date, @RequestParam("picture") Part picture) {
         ModelView model = new ModelView();
         String url = "app/flights/promotion";
         Flight flight = new Flight();
@@ -265,11 +265,12 @@ public class FlightController {
         String message = "";
         try {
             Connection connection = new UtilDb().getPgConnection();
-            new Booking().book(connection, idplace, number, date, flight, user, age, picture);
+            booking.book(connection, date, flight, user, picture);
             message = "Your reservation has been made";
             connection.close();
         } catch (Exception e) {
             message = e.getMessage();
+            e.printStackTrace();
         }
         model.setUrl(url+"?message="+message+"&&flight="+idflight);
         return model;
@@ -401,18 +402,15 @@ public class FlightController {
     }
 
     @Url("flights/prices/add")
-    public ModelView addPrice(@RequestParam("id") String id, @RequestParam("place") String idPlace, @RequestParam("price") String price) {
+    public ModelView addPrice(@RequestParam("id") int idFlight, @RequestParam("place") int idPlace, @RequestParam("price") int price) {
         ModelView model = new ModelView();
         String url = "app/flights/prices";
         Flight flight = new Flight();
-        flight.setId(Integer.valueOf(id));
+        flight.setId(idFlight);
         String message = "";
         try {
             Connection connection = new UtilDb().getPgConnection();
-            int idFlight = Integer.valueOf(id);
-            int idPlace1 = Integer.valueOf(idPlace);
-            double price1 = Double.valueOf(price);
-            FlightPrice prices = new FlightPrice(idFlight, idPlace1, price1);
+            FlightPrice prices = new FlightPrice(idFlight, idPlace, price);
             FlightPrice oldPrice = prices.getByIdPlaceAndIdFlight(connection);
             if (oldPrice == null) {
                 message = "Price added";
@@ -427,7 +425,7 @@ public class FlightController {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        model.setUrl(url+"?id="+id+"&message="+message);
+        model.setUrl(url+"?id="+idFlight+"&message="+message);
         return model;
     }
 

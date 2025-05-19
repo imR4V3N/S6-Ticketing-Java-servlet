@@ -103,7 +103,7 @@
     <form action="<%= root %>/app/flights/booking" method="POST" enctype="multipart/form-data">
         <div class="form-group">
             <label for="placeType">Travel Class</label>
-            <select id="placeType" name="place">
+            <select id="placeType" name="Booking:idPlace">
                 <% if (placeTypes != null && placeTypes.length > 0) {
                     for (PlaceType place : placeTypes){ %>
                 <option value="<%=place.getId() %>"><%=place.getName() %></option>
@@ -113,7 +113,7 @@
 
         <div class="form-group">
             <label for="age">Age</label>
-            <select id="age" name="age">
+            <select id="age" name="Booking:idAge">
                 <% if (ages != null && ages.length > 0) {
                     for (Age value : ages){ %>
                 <option value="<%=value.getId() %>"><%=value.getName() %></option>
@@ -123,7 +123,7 @@
 
         <div class="form-group">
             <label for="number">Number of Seats</label>
-            <input type="number" name="number" id="number" min="1">
+            <input type="number" name="Booking:placeNumber" id="number" min="1">
         </div>
 
         <div class="form-group">

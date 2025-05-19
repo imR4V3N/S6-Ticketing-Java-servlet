@@ -8,6 +8,7 @@ import mg.ticketing.models.utils.UtilDb;
 import mg.ticketing.models.utils.Utils;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -23,8 +24,20 @@ public class Main {
         System.out.println();
     }
 
+    public static Connection getPgConnection() throws Exception{
+        Connection c = null;
+        try {
+            Class.forName("org.postgresql.Driver");
+            c = DriverManager.getConnection("jdbc:postgresql://localhost:5432/ticketing","postgres","post");
+        }
+        catch(Exception e){
+            throw new Exception("Connection error : " + e.getMessage());
+        }
+        return c;
+    }
+
     public static void restart() throws Exception {
-        Connection connection = new UtilDb().getPgConnection();
+        Connection connection = getPgConnection();
         System.out.print("Restarting data");
         Utils.restartData(connection, "booking");
 //        Utils.restartData(connection, "users");
@@ -36,7 +49,7 @@ public class Main {
 //        Utils.restartData(connection, "plane");
 //        Utils.restartData(connection, "plane_model");
 //        Utils.restartData(connection, "plane_place");
-        Utils.restartData(connection, "age");
+//        Utils.restartData(connection, "age");
         connection.close();
         new Main().loading(3, 2000);
         System.out.println("Data restarted.");
