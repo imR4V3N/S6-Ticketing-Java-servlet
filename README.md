@@ -91,17 +91,17 @@ Make sure you have:
 
     <context-param>
         <param-name>app.db.url</param-name>
-        <param-value>jdbc:postgresql://localhost:5432/ticketing</param-value>
+        <param-value>jdbc:postgresql://localhost:5432/database</param-value>
     </context-param>
 
     <context-param>
         <param-name>app.db.user</param-name>
-        <param-value>postgres</param-value>
+        <param-value>your-database-user</param-value>
     </context-param>
 
     <context-param>
         <param-name>app.db.pwd</param-name>
-        <param-value>post</param-value>
+        <param-value>your-database-password</param-value>
     </context-param>
 
     <listener>
